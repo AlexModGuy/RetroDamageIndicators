@@ -4,7 +4,7 @@ license="GNU LESSER GENERAL PUBLIC LICENSE"
 issueTrackerURL="https://github.com/AlexModGuy/RetroDamageIndicators/issues" #optional
 [[mods]] #mandatory
 modId="retrodamageindicators" #mandatory
-version="1.0.0" #mandatory
+version="1.0.1" #mandatory
 displayName="Retro Damage Indicators" #mandatory
 displayURL="" #optional
 logoFile="assets/retrodamageindicators/textures/mod_logo.png" #optional
