@@ -1,5 +1,6 @@
 package com.github.alexmodguy.retrodamageindicators;
 
+import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.platform.Lighting;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -52,8 +53,6 @@ public class RetroDamageIndicators {
     public static void onPreRenderGuiElement(RenderGuiOverlayEvent.Pre event) {
         if (Config.INSTANCE.hudIndicatorEnabled.get()) {
             if (event.getOverlay().id().equals(VanillaGuiOverlay.BOSS_EVENT_PROGRESS.id()) && damageIndicatorEntity != null) {
-                RenderSystem.enableBlend();
-                RenderSystem.defaultBlendFunc();
                 float entityHealth = Math.min(damageIndicatorEntity.getHealth(), damageIndicatorEntity.getMaxHealth());
                 float entityMaxHealth = damageIndicatorEntity.getMaxHealth();
                 float healthRatio = entityMaxHealth <= 0.0F ? 0.0F : entityHealth / entityMaxHealth;
@@ -85,25 +84,35 @@ public class RetroDamageIndicators {
                 int currentHealthbarWidth = (int) Math.round(healthbarMaxWidth * healthRatio);
                 PoseStack poseStack = event.getGuiGraphics().pose();
                 poseStack.pushPose();
-                poseStack.translate(xOffset, yOffset, 0);
+                poseStack.translate(xOffset, yOffset - 0.5F, 0);
                 poseStack.scale(scale, scale, scale);
 
-                poseStack.pushPose();
-                poseStack.translate(0, 0, -200);
-
-                //background render
-                RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, backgroundOpacity);
-                event.getGuiGraphics().blit(DAMAGE_INDICATOR_BACKGROUND_TEXTURE, 0, 0, 50, 0, 0, 208, 78, 256, 256);
-                RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
-
-                // entity render
-                int minEntityBoxX = 16;
-                int minEntityBoxY = 4;
-                int maxEntityBoxX = 73;
-                int maxEntityBoxY = 61;
+                // upper half entity render box scissor coords.
+                int scissorBox1MinX = 16;
+                int scissorBox1MinY = 4;
+                int scissorBox1MaxX = 73;
+                int scissorBox1MaxY = 49;
+                // lower half entity render box scissor coords.
+                int scissorBox2MinX = 28;
+                int scissorBox2MinY = 49;
+                int scissorBox2MaxX = 73;
+                int scissorBox2MaxY = 61;
                 int entityX = 45;
                 int entityY = 56;
-                event.getGuiGraphics().enableScissor(xOffset + Math.round(scale * minEntityBoxX), yOffset + Math.round(scale * minEntityBoxY), xOffset + Math.round(scale * maxEntityBoxX), yOffset + Math.round(scale * maxEntityBoxY));
+
+                //render the first half of the entity (above y = 49)
+                event.getGuiGraphics().enableScissor(xOffset + Math.round(scale * scissorBox1MinX), yOffset + Math.round(scale * scissorBox1MinY), xOffset + Math.round(scale * scissorBox1MaxX), yOffset + Math.round(scale * scissorBox1MaxY));
+                if (damageIndicatorEntity != null) {
+                    float biggestEntityDimension = Math.max(damageIndicatorEntity.getBbWidth() * 1.2F + 0.3F, damageIndicatorEntity.getBbHeight() * 0.9F) * 0.85F;
+                    float renderScale = Config.INSTANCE.hudEntitySize.get().floatValue();
+                    if ((double) biggestEntityDimension > 0.5D) {
+                        renderScale /= biggestEntityDimension;
+                    }
+                    renderEntityInGui(event.getGuiGraphics(), entityX, entityY, renderScale, ENTITY_ROTATION, damageIndicatorEntity, event.getPartialTick());
+                }
+                event.getGuiGraphics().disableScissor();
+                //render the second half of the entity (below y = 49)
+                event.getGuiGraphics().enableScissor(xOffset + Math.round(scale * scissorBox2MinX), yOffset + Math.round(scale * scissorBox2MinY), xOffset + Math.round(scale * scissorBox2MaxX), yOffset + Math.round(scale * scissorBox2MaxY));
                 if (damageIndicatorEntity != null) {
                     float biggestEntityDimension = Math.max(damageIndicatorEntity.getBbWidth() * 1.2F + 0.3F, damageIndicatorEntity.getBbHeight() * 0.9F) * 0.85F;
                     float renderScale = Config.INSTANCE.hudEntitySize.get().floatValue();
@@ -114,11 +123,27 @@ public class RetroDamageIndicators {
                 }
                 event.getGuiGraphics().disableScissor();
 
+                poseStack.pushPose();
+                poseStack.translate(0, 0, -200);
+
+                //background render
                 RenderSystem.enableBlend();
+                RenderSystem.blendFuncSeparate(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA, GlStateManager.SourceFactor.ZERO, GlStateManager.DestFactor.ONE);
+                RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, backgroundOpacity);
+                event.getGuiGraphics().blit(DAMAGE_INDICATOR_BACKGROUND_TEXTURE, 0, 0, 50, 0, 0, 208, 78, 256, 256);
+                RenderSystem.disableBlend();
+                RenderSystem.defaultBlendFunc();
                 RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
 
+
+
+                RenderSystem.enableBlend();
+                RenderSystem.blendFuncSeparate(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA, GlStateManager.SourceFactor.ZERO, GlStateManager.DestFactor.ONE);
                 //foreground render
                 event.getGuiGraphics().blit(DAMAGE_INDICATOR_TEXTURE, 0, 0, 50, 0, 0, 208, 78, 256, 256);
+                RenderSystem.disableBlend();
+                RenderSystem.defaultBlendFunc();
+                RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
 
                 // mob type render
                 int relativeMobTypeX = 5;
