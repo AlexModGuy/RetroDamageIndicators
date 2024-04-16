@@ -51,7 +51,7 @@ public class RetroDamageIndicators {
     @SubscribeEvent
     public static void onPreRenderGuiElement(RenderGuiOverlayEvent.Pre event) {
         if (Config.INSTANCE.hudIndicatorEnabled.get()) {
-            if (event.getOverlay().id().equals(VanillaGuiOverlay.PORTAL.id()) && damageIndicatorEntity != null) {
+            if (event.getOverlay().id().equals(VanillaGuiOverlay.BOSS_EVENT_PROGRESS.id()) && damageIndicatorEntity != null) {
                 RenderSystem.enableBlend();
                 RenderSystem.defaultBlendFunc();
                 float entityHealth = Math.min(damageIndicatorEntity.getHealth(), damageIndicatorEntity.getMaxHealth());
@@ -87,6 +87,10 @@ public class RetroDamageIndicators {
                 poseStack.pushPose();
                 poseStack.translate(xOffset, yOffset, 0);
                 poseStack.scale(scale, scale, scale);
+
+                poseStack.pushPose();
+                poseStack.translate(0, 0, -200);
+
                 //background render
                 RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, backgroundOpacity);
                 event.getGuiGraphics().blit(DAMAGE_INDICATOR_BACKGROUND_TEXTURE, 0, 0, 50, 0, 0, 208, 78, 256, 256);
@@ -126,6 +130,8 @@ public class RetroDamageIndicators {
                 event.getGuiGraphics().blit(DAMAGE_INDICATOR_HEALTH_TEXTURE, relativeHealthbarX, relativeHealthbarY, 50, 0, healthbarVOffset + 18, healthbarMaxWidth, healthbarHeight, 256, 256);
                 event.getGuiGraphics().blit(DAMAGE_INDICATOR_HEALTH_TEXTURE, relativeHealthbarX, relativeHealthbarY, 50, 0, healthbarVOffset, currentHealthbarWidth, healthbarHeight, 256, 256);
 
+                poseStack.popPose();
+
                 //health text
                 String healthText;
                 float healthOffsetX = 136;
@@ -154,7 +160,7 @@ public class RetroDamageIndicators {
                 poseStack.pushPose();
                 poseStack.translate(healthOffsetX, healthOffsetY, 0);
                 poseStack.scale(healthScale, healthScale, 1);
-                poseStack.translate(-firstHalfWidth, 0, 200F);
+                poseStack.translate(-firstHalfWidth, 0, -50);
                 if (Config.INSTANCE.hudHealthTextOutline.get()) {
                     Minecraft.getInstance().font.drawInBatch8xOutline(healthComponent.getVisualOrderText(), 0.0F, 0.0F, healthColor, healthOutlineColor, poseStack.last().pose(), event.getGuiGraphics().bufferSource(), 15728880);
                 } else {
@@ -174,7 +180,7 @@ public class RetroDamageIndicators {
                 poseStack.pushPose();
                 poseStack.translate(nameOffsetX, nameOffsetY, 0);
                 poseStack.scale(nameScale, nameScale, 1);
-                poseStack.translate(-nameWidth / 2F, 0, 222);
+                poseStack.translate(-nameWidth / 2F, 0, -50);
                 if (Config.INSTANCE.hudNameTextOutline.get()) {
                     Minecraft.getInstance().font.drawInBatch8xOutline(nameComponent.getVisualOrderText(), 0.0F, 0.0F, nameColor, nameOutlineColor, poseStack.last().pose(), event.getGuiGraphics().bufferSource(), 15728880);
                 } else {

@@ -17,13 +17,16 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(LivingEntity.class)
 public abstract class LivingEntityMixin extends Entity {
 
-    @Shadow @Final private static EntityDataAccessor<Float> DATA_HEALTH_ID;
+    @Shadow
+    @Final
+    private static EntityDataAccessor<Float> DATA_HEALTH_ID;
 
     public LivingEntityMixin(EntityType<?> entityType, Level level) {
         super(entityType, level);
     }
 
-    @Shadow public abstract float getHealth();
+    @Shadow
+    public abstract float getHealth();
 
     private float lastTrackedHealth = 0;
 
@@ -33,10 +36,12 @@ public abstract class LivingEntityMixin extends Entity {
             at = @At(value = "HEAD")
     )
     public void retroDamageIndicators_onSyncedDataUpdated(EntityDataAccessor<?> entityDataAccessor, CallbackInfo ci) {
-        if(entityDataAccessor.equals(DATA_HEALTH_ID)){
-            if(level().isClientSide && Config.INSTANCE.damageParticlesEnabled.get() && lastTrackedHealth != this.getHealth()){
+        if (entityDataAccessor.equals(DATA_HEALTH_ID)) {
+            if (level().isClientSide && Config.INSTANCE.damageParticlesEnabled.get() && lastTrackedHealth != this.getHealth()) {
                 float difference = this.getHealth() - lastTrackedHealth;
-                RetroDamageIndicators.spawnHurtParticles(this, difference);
+                if (!this.isRemoved() && this.isAddedToWorld()) {
+                    RetroDamageIndicators.spawnHurtParticles(this, difference);
+                }
                 lastTrackedHealth = this.getHealth();
             }
         }
