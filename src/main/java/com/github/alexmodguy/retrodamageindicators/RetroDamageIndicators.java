@@ -214,6 +214,7 @@ public class RetroDamageIndicators {
                 poseStack.popPose();
 
                 poseStack.popPose();
+                event.getGuiGraphics().flush();
             }
 
         }
